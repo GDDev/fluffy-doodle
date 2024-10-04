@@ -1,0 +1,38 @@
+* {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+html{
+    max-height: 100vh;
+    max-width: 100vw;
+}
+
+body{
+    height: inherit;
+    width: inherit;
+    display: flex;
+    flex-direction: column;
+    align-content: space-around;
+    justify-content: space-between;
+}
+
+.container{
+    height: inherit;
+    width: inherit;
+}
+
+.bad-quotes-container{
+    background-color: black;
+    color: red;
+}
+
+.good-quotes-container{
+    background-color: deepskyblue;
+    color: whitesmoke;
+}
+
+.credits-container{
+    background-color: red;
+    color: black;
+}
