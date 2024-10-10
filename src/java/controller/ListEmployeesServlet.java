@@ -1,16 +1,20 @@
 package controller;
 
+import dao.EmployeeDAO;
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.PrintWriter;
+import java.sql.SQLException;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import model.Employee;
 
-public class QuotesController extends HttpServlet {
+public class ListEmployeesServlet extends HttpServlet {
+    
+    final EmployeeDAO empDAO = new EmployeeDAO();
+    Employee emp = new Employee();
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -29,27 +33,19 @@ public class QuotesController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        try{
-            String quoteType = request.getParameter("type");
-            
-            switch (quoteType){
-                case "good" -> {
-                    request.getRequestDispatcher("./extra/goodquotes.jsp").forward(request, response);
-                }
-                case "bad" -> {
-                    Path path = Paths.get(".\\extra\\notsogoodquotes.jsp");
-                    if (Files.exists(path)){
-                        request.getRequestDispatcher("./extra/notsogoodquotes.jsp").forward(request, response);
-                    }
-                    request.getRequestDispatcher("./extra/goodquotes.jsp").forward(request, response);
-                }
-                default ->{
-                    throw new AccessDeniedException("Not an option.");
-                }
+        try {
+            String order = request.getParameter("sort");
+            if (order == null || order.trim().equals("")){
+                order = "id";
             }
-        }
-        catch(AccessDeniedException e){
-            request.getRequestDispatcher("index.jsp");
+            request.setAttribute("order", order);
+            List<Employee> empList = empDAO.findAllEmployees(order);
+
+            request.setAttribute("empList", empList);
+            request.getRequestDispatcher("allemployees.jsp").forward(request, response);
+        } catch(SQLException e){
+            System.out.println("Erro ao buscar funcionários.");
+            response.sendRedirect("index.jsp");
         }
     }
 

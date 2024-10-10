@@ -13,18 +13,16 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Todos os Funcionários</title>
         
-        <script src="https://kit.fontawesome.com/5f236bbd73.js" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="./css/style.css"/>
     </head>
     <body>
-        <header>
-            <a href="./index.html"><h1>SHOP</h1></a>
-        </header>
+        <jsp:include page="./components/header.jsp" />
+                
+        <h1>Listagem de Funcionários</h1>
         
-        <h1>Todos os Funcionários</h1>
-        
-        <form action="GerenciarFuncionarios">
+        <form action="new">
             <span>Registrar Funcionário</span>
-            <button type="submit" value="NEWEMPLOYEE" name="btn" style="font-size:14px">
+            <button type="submit" value="newEmp" name="newBtn" style="font-size:14px">
                 <i class='fas fa-plus-circle'></i>
             </button>
         </form>
@@ -49,26 +47,41 @@
                         <th>FOTO</th>
                         <th>ID</th>
                         <th>Nome</th>
+                        <th>Cargo</th>
                         <th>Editar</th>
                         <th>Deletar</th>
                     </tr> 
                 </thead>
                 <tbody>    
-                    <% for(Employee emp : empList){ %>
-                    <tr>
+                    <% 
+                        int rowIndex = 0;
+                        for(Employee emp : empList){ 
+                    %>
+                    <tr id="row<%= rowIndex%>">
                         <td><img src="<%=emp.getImage()%>" alt="alt" height="20px" width="20px"/></td>
                         <td><%=emp.getId()%></td>
-                        <td><%=emp.getName()%></td>
-                        <form action="GerenciarFuncionarios" method="GET">
-                            <td><button type="submit" name="btn" value="EDITEMPLOYEE"><i class="fa-solid fa-pencil"></i></button></td>
-                            <td><button type="submit" name="btn" value="DELETEEMPLOYEE"><i class="fa-solid fa-trash"></i></button></td>
+                        <% String name = emp.getFirstName() + " " + emp.getLastName(); %>
+                        <td><%=name%></td>
+                        <td><%=emp.getJobTitle()%></td>
+                        <form action="detail" method="post">
+                            <td><button type="submit" name="btn" value="detail"><i class="fa-solid fa-pencil"></i></button></td>
+                            <input type="hidden" name="emp_id" value="<%=emp.getId()%>"/>
+                        </form>
+                        <form action="delete" method="post">
+                            <td><button type="submit"><i class="fa-solid fa-trash"></i></button></td>
                             <input type="hidden" name="emp_id" value="<%=emp.getId()%>"/>
                         </form>
                     </tr>
-                    <% } %>
+                    <% 
+                        rowIndex++;
+                        } 
+                    %>
                 </tbody>
             </table>
             <% } %>
         </div>
+        
+        <script src="https://kit.fontawesome.com/5f236bbd73.js" crossorigin="anonymous"></script>
+        <script src="./js/script.js"></script>
     </body>
 </html>

@@ -1,21 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
     <servlet>
-        <servlet-name>EmployeeController</servlet-name>
-        <servlet-class>controller.EmployeeController</servlet-class>
-    </servlet>
-    <servlet>
         <servlet-name>GetQuotes</servlet-name>
         <servlet-class>controller.QuotesController</servlet-class>
     </servlet>
-    <servlet-mapping>
-        <servlet-name>EmployeeController</servlet-name>
-        <url-pattern>/GerenciarFuncionarios</url-pattern>
-    </servlet-mapping>
+    <servlet>
+        <servlet-name>DeleteEmployeeServlet</servlet-name>
+        <servlet-class>controller.DeleteEmployeeServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>AddEmployeeServlet</servlet-name>
+        <servlet-class>controller.AddEmployeeServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ListEmployeesServlet</servlet-name>
+        <servlet-class>controller.ListEmployeesServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>DetailEmployeeServlet</servlet-name>
+        <servlet-class>controller.DetailEmployeeServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>EditEmployeeServlet</servlet-name>
+        <servlet-class>controller.EditEmployeeServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>GetQuotes</servlet-name>
         <url-pattern>/asdGHsMnDSLsdkp</url-pattern>
     </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>DeleteEmployeeServlet</servlet-name>
+        <url-pattern>/delete</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AddEmployeeServlet</servlet-name>
+        <url-pattern>/new</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ListEmployeesServlet</servlet-name>
+        <url-pattern>/all</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>DetailEmployeeServlet</servlet-name>
+        <url-pattern>/detail</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EditEmployeeServlet</servlet-name>
+        <url-pattern>/edit</url-pattern>
+    </servlet-mapping>
+    <error-page>
+        <error-code>404</error-code>
+        <location>/deadend.jsp</location>
+    </error-page>
     <session-config>
         <session-timeout>
             30

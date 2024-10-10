@@ -1,17 +1,19 @@
 package controller;
 
+import dao.EmployeeDAO;
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.sql.SQLException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import model.Employee;
 
-public class QuotesController extends HttpServlet {
+public class DetailEmployeeServlet extends HttpServlet {
 
+    final EmployeeDAO empDAO = new EmployeeDAO();
+    Employee emp = new Employee();
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
@@ -29,28 +31,7 @@ public class QuotesController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        try{
-            String quoteType = request.getParameter("type");
-            
-            switch (quoteType){
-                case "good" -> {
-                    request.getRequestDispatcher("./extra/goodquotes.jsp").forward(request, response);
-                }
-                case "bad" -> {
-                    Path path = Paths.get(".\\extra\\notsogoodquotes.jsp");
-                    if (Files.exists(path)){
-                        request.getRequestDispatcher("./extra/notsogoodquotes.jsp").forward(request, response);
-                    }
-                    request.getRequestDispatcher("./extra/goodquotes.jsp").forward(request, response);
-                }
-                default ->{
-                    throw new AccessDeniedException("Not an option.");
-                }
-            }
-        }
-        catch(AccessDeniedException e){
-            request.getRequestDispatcher("index.jsp");
-        }
+        processRequest(request, response);
     }
 
     /**
@@ -63,8 +44,22 @@ public class QuotesController extends HttpServlet {
      */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
+            throws ServletException, IOException { 
+        try {
+            if (!request.getParameter("emp_id").isBlank() && !request.getParameter("emp_id").isEmpty()){
+                int id = Integer.parseInt(request.getParameter("emp_id"));
+                if (emp == null) emp = new Employee();
+                emp.setId(id);
+                emp = empDAO.findEmployeeById(emp);
+
+                request.setAttribute("emp", emp);
+                request.getRequestDispatcher("employeedetails.jsp").forward(request, response);
+            } else{
+                response.sendRedirect("all");
+            }
+        } catch(SQLException e){
+            response.sendRedirect("all");
+        }
     }
 
     /**
