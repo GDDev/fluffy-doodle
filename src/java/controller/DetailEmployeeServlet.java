@@ -1,5 +1,7 @@
 package controller;
 
+import command.DetailEmployeeAction;
+import command.ICommand;
 import dao.EmployeeDAO;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -10,9 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 import model.Employee;
 
 public class DetailEmployeeServlet extends HttpServlet {
-
-    final EmployeeDAO empDAO = new EmployeeDAO();
-    Employee emp = new Employee();
     
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -46,18 +45,11 @@ public class DetailEmployeeServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException { 
         try {
-            if (!request.getParameter("emp_id").isBlank() && !request.getParameter("emp_id").isEmpty()){
-                int id = Integer.parseInt(request.getParameter("emp_id"));
-                if (emp == null) emp = new Employee();
-                emp.setId(id);
-                emp = empDAO.findEmployeeById(emp);
-
-                request.setAttribute("emp", emp);
-                request.getRequestDispatcher("employeedetails.jsp").forward(request, response);
-            } else{
-                response.sendRedirect("all");
-            }
-        } catch(SQLException e){
+            ICommand command = new DetailEmployeeAction();
+            String pageAction = command.execute(request, response);
+            request.getRequestDispatcher(pageAction).forward(request, response);
+        } catch(Exception e){
+            // TODO change back to Dispatcher
             response.sendRedirect("all");
         }
     }

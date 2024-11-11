@@ -1,8 +1,9 @@
 package controller;
 
+import command.DeleteEmployeeAction;
+import command.ICommand;
 import dao.EmployeeDAO;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -11,9 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 import model.Employee;
 
 public class DeleteEmployeeServlet extends HttpServlet {
-
-    final EmployeeDAO empDAO = new EmployeeDAO();
-    Employee emp = new Employee();
     
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -47,20 +45,11 @@ public class DeleteEmployeeServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try{
-            int id = Integer.parseInt(request.getParameter("emp_id"));
-            emp.setId(id);
-            emp = empDAO.findEmployeeById(emp);
-            boolean deletionSuccess = empDAO.removeEmployee(emp);
-
-            if (deletionSuccess) {
-                request.setAttribute("message", "Funcionário deletado com sucesso!");
-                response.sendRedirect("all");
-            } else {
-                request.setAttribute("message", "Funcionário não pôde ser deletado.");
-                response.sendRedirect("all");
-            }
-        } catch(NumberFormatException | SQLException e) {
-            System.out.println("Erro ao deletar funcionário.");
+            ICommand command = new DeleteEmployeeAction();
+            String pageAction = command.execute(request, response);
+            request.getRequestDispatcher(pageAction).forward(request, response);
+        } catch(Exception e) {
+            request.setAttribute("error", e.getMessage());
         }
     }
 

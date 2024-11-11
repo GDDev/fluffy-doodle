@@ -11,13 +11,16 @@ import java.sql.Date;
 import java.util.List;
 import model.Email;
 import model.Employee;
+import model.EmployeeBuilder;
 import model.Phone;
 import model.WorkingDay;
-import model.WorkingDay.WeekDay;
 import util.ConnectionFactory;
 
 public class EmployeeDAO {
     private static final String EMPTABLE = "employees";
+    private WorkingDayDAO wdayDAO = new WorkingDayDAO();
+    private EmailDAO emailDAO = new EmailDAO();
+    private PhoneDAO phoneDAO = new PhoneDAO();
     
     public static Connection getConnection() throws SQLException, ClassNotFoundException{
         return ConnectionFactory.getConnectionMySQL();
@@ -62,80 +65,23 @@ public class EmployeeDAO {
         return emp;
     }
     
-    public void insertWorkingDays(Employee emp){
-        try (Connection conn = getConnection()){
-            // Insert Designated Working Days
-            String sql = "INSERT INTO working_day (emp_id, week_day) VALUES (?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                for(WorkingDay day : emp.getWorkingDays()){
-                    stmt.setInt(1, emp.getId());
-                    stmt.setString(2, day.getWeekDay().getEnumName());
-                    stmt.addBatch();
-                }
-                stmt.executeBatch();
-                conn.commit();
-            }
-        }
-        catch(SQLException | ClassNotFoundException e){
-            System.out.println("Erro ao conectar com o banco." + e.getMessage());
-        }
-    }
-    
-    public void insertPhoneNumbers(Employee emp){
-        try (Connection conn = getConnection()){
-            // Insert Employee's Phone Numbers
-            String sql = "INSERT INTO phones (emp_id, phone_number) VALUES (?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                for(Phone number : emp.getPhones()){
-                    stmt.setInt(1, emp.getId());
-                    stmt.setString(2, number.getNumber());
-                    stmt.addBatch();
-                }
-                stmt.executeBatch();
-                conn.commit();
-            }
-        }
-        catch(SQLException | ClassNotFoundException e){
-            System.out.println("Erro ao conectar com o banco." + e.getMessage());
-        }
-    }
-    
-    public void insertEmails(Employee emp){
-        try (Connection conn = getConnection()){
-            // Insert Employee's E-mails
-            String sql = "INSERT INTO emails (emp_id, email) VALUES (?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                for(Email email : emp.getEmails()){
-                    stmt.setInt(1, emp.getId());
-                    stmt.setString(2, email.getEmail());
-                    stmt.addBatch();
-                }
-                stmt.executeBatch();
-                conn.commit();
-            }
-        }
-        catch(SQLException | ClassNotFoundException e){
-            System.out.println("Erro ao conectar com o banco." + e.getMessage());
-        }
-    }
-    
     public void registerEmployee(Employee emp) throws SQLException, ClassNotFoundException{
         // Insert Employee
         emp = this.insertEmployee(emp);
         if (emp.getId() != 0){
             if (emp.getWorkingDays() != null){
                 // Insert Designated Working Days
-                this.insertWorkingDays(emp);
+                wdayDAO.insertWorkingDays(emp.getWorkingDays(), emp.getId());
             }
 
             // Insert Employee's Contact Info
             if (emp.getPhones() != null){
                 // Insert Employee's Phone Numbers
-                this.insertPhoneNumbers(emp);
+                phoneDAO.insertPhoneNumbers(emp.getPhones(), emp.getId());
             }
             if (emp.getEmails() != null){
                 // Insert Employee's E-mails
-                this.insertEmails(emp); 
+                emailDAO.insertEmails(emp.getEmails(), emp.getId()); 
             }
         }
     }
@@ -164,58 +110,7 @@ public class EmployeeDAO {
         }
     }
     
-    public boolean deleteEmployeeEmails(Employee emp){
-        boolean deleted = false;
-        try (Connection conn = getConnection()){
-            String sql = "DELETE FROM emails WHERE emp_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1, emp.getId());
-                deleted = !stmt.execute();
-            }
-        }
-        catch (SQLException | ClassNotFoundException e){
-            System.out.println(e.getMessage());
-        }
-        finally {
-            return deleted;
-        }
-    }
-    
-    public boolean deleteEmployeePhones(Employee emp){
-        boolean deleted = false;
-        try (Connection conn = getConnection()){
-            String sql = "DELETE FROM phones WHERE emp_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1, emp.getId());
-                deleted = !stmt.execute();
-            }
-        }
-        catch (SQLException | ClassNotFoundException e){
-            System.out.println(e.getMessage());
-        }
-        finally {
-            return deleted;
-        }
-    }
-        
-    public boolean deleteEmployeeWorkingDays(Employee emp){
-        boolean deleted = false;
-        try (Connection conn = getConnection()){
-            String sql = "DELETE FROM working_day WHERE emp_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1, emp.getId());
-                deleted = !stmt.execute();
-            }
-        }
-        catch (SQLException | ClassNotFoundException e){
-            System.out.println(e.getMessage());
-        }
-        finally{
-            return deleted;
-        }
-    }
-    
-    public boolean deleteEmployee(Employee emp){
+    public void deleteEmployee(Employee emp) throws SQLException{
         boolean deleted = false;
         try (Connection conn = getConnection()){
             String sql = "DELETE FROM "+EMPTABLE+" WHERE id = ?";
@@ -224,135 +119,26 @@ public class EmployeeDAO {
                 deleted = !stmt.execute();
             }
         }
-        catch (SQLException | ClassNotFoundException e){
+        catch (ClassNotFoundException e){
             System.out.println(e.getMessage());
         }
         finally {
-            return deleted;
-        }
-    }
-    
-    public boolean generalizedDelete(Employee emp, String table, String field){
-        boolean deleted = false;
-        try (Connection conn = getConnection()){
-            String sql = "DELETE FROM " + table + " WHERE " + field + " = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1, emp.getId());
-                deleted = !stmt.execute();
+            if (!deleted){
+                throw new SQLException("Failed to delete employee.");
             }
         }
-        catch (SQLException | ClassNotFoundException e){
-            System.out.println(e.getMessage());
-        }
-        finally {
-            return deleted;
-        }
     }
     
-    public boolean removeEmployee(Employee emp){
-        /*if (this.deleteEmployeeEmails(emp) &&
-            this.deleteEmployeePhones(emp) &&
-            this.deleteEmployeeWorkingDays(emp)){
-            return this.deleteEmployee(emp);
+    public void removeEmployee(Employee emp){
+        int empId = emp.getId();
+        try{
+            wdayDAO.deleteEmployeeWorkingDays(empId);
+            phoneDAO.deleteEmployeePhones(empId);
+            emailDAO.deleteEmployeeEmails(empId);
+            this.deleteEmployee(emp);
         }
-        return false;*/
-        
-        if (this.generalizedDelete(emp, "working_day", "emp_id") &&
-            this.generalizedDelete(emp, "phones", "emp_id") &&
-            this.generalizedDelete(emp, "emails", "emp_id")){
-            return this.generalizedDelete(emp, EMPTABLE, "id");
-        }
-        return false;
-    }
-    
-    public List<WorkingDay> getEmployeeWorkingDays(Employee emp){
-        List<WorkingDay> workingDays = new ArrayList<>();
-        WorkingDay wd = new WorkingDay();
-        WeekDay day = WeekDay.MONDAY;
-        try (Connection conn = getConnection()){
-            String sql = "SELECT * FROM working_day WHERE emp_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1, emp.getId());
-                try (ResultSet rs = stmt.executeQuery()){
-                    while (rs.next()){
-                        int id = rs.getInt("id");
-                        int empId = rs.getInt("emp_id");
-                        String dayStr = rs.getString("week_day");
-                        
-                        for (WeekDay d : WeekDay.values()){
-                            if (dayStr.equals(d.getEnumName())) day = d;
-                        }
-                        wd = new WorkingDay(empId, day);
-                        wd.setId(id);
-                        
-                        workingDays.add(wd);
-                    }
-                }
-            }
-        }
-        catch (SQLException | ClassNotFoundException e){
+        catch(SQLException e){
             System.out.println(e.getMessage());
-        }
-        
-        return workingDays;
-    }
-    
-    public List<Phone> getEmployeePhones(Employee emp){
-        List<Phone> phones = new ArrayList<>();
-        Phone phone = new Phone();
-        try (Connection conn = getConnection()){
-            String sql = "SELECT * FROM phones WHERE emp_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1, emp.getId());
-                try (ResultSet rs = stmt.executeQuery()){
-                    while (rs.next()){
-                        int id = rs.getInt("id");
-                        int empId = rs.getInt("emp_id");
-                        String num = rs.getString("phone_number");
-                        
-                        phone = new Phone(empId, num);
-                        phone.setId(id);
-                        
-                        phones.add(phone);
-                    }
-                }
-            }
-        }
-        catch (SQLException | ClassNotFoundException e){
-            System.out.println(e.getMessage());
-        }
-        finally {
-            return phones;
-        }
-    }
-    
-    public List<Email> getEmployeeEmails(Employee emp){
-        List<Email> emails = new ArrayList<>();
-        Email email = new Email();
-        
-        try (Connection conn = getConnection()){
-            String sql = "SELECT * FROM emails WHERE emp_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1, emp.getId());
-                try (ResultSet rs = stmt.executeQuery()){
-                    while (rs.next()){
-                        int id = rs.getInt("id");
-                        int empId = rs.getInt("emp_id");
-                        String emailStr = rs.getString("email");
-                        
-                        email = new Email(empId, emailStr);
-                        email.setId(id);
-                        
-                        emails.add(email);
-                    }
-                }
-            }
-        }
-        catch (SQLException | ClassNotFoundException e){
-            System.out.println(e.getMessage());
-        }
-        finally {
-            return emails;
         }
     }
     
@@ -375,20 +161,28 @@ public class EmployeeDAO {
                         LocalTime clockout = rs.getTime("clock_out_time").toLocalTime();
                         String image = rs.getString("image");
 
-                        emp = new Employee(firstName, lastName, birthDate, jobTitle,
-                        hireDate, salary, clockIn, clockout, image);
+                        emp = new EmployeeBuilder()
+                                .withName(firstName, lastName)
+                                .withBirthDate(birthDate)
+                                .withJobTitle(jobTitle)
+                                .hiredAt(hireDate)
+                                .withSalary(salary)
+                                .clockInAt(clockIn)
+                                .clockOutAt(clockout)
+                                .photoAtPath(image)
+                                .build();
                         emp.setId(id);  
                         
                         // Get employee's working days
-                        List<WorkingDay> wds = this.getEmployeeWorkingDays(emp);
+                        List<WorkingDay> wds = wdayDAO.getEmployeeWorkingDays(emp.getId());
                         if (!wds.isEmpty()) emp.setWorkingDays(wds);
                         
                         // Get employee's phone numbers
-                        List<Phone> phones = this.getEmployeePhones(emp);
+                        List<Phone> phones = phoneDAO.getEmployeePhones(emp.getId());
                         if (!phones.isEmpty()) emp.setPhones(phones);
                         
                         // Get employee's e-mails
-                        List<Email> emails = this.getEmployeeEmails(emp);
+                        List<Email> emails = emailDAO.getEmployeeEmails(emp.getId());
                         if (!emails.isEmpty()) emp.setEmails(emails);
                     } else{
                         emp = null;
@@ -423,8 +217,16 @@ public class EmployeeDAO {
                         LocalTime clockout = rs.getTime("clock_out_time").toLocalTime();
                         String image = rs.getString("image");
 
-                        Employee emp = new Employee(firstName, lastName, birthDate, jobTitle,
-                        hireDate, salary, clockIn, clockout, image);
+                        Employee emp = new EmployeeBuilder()
+                                .withName(firstName, lastName)
+                                .withBirthDate(birthDate)
+                                .withJobTitle(jobTitle)
+                                .hiredAt(hireDate)
+                                .withSalary(salary)
+                                .clockInAt(clockIn)
+                                .clockOutAt(clockout)
+                                .photoAtPath(image)
+                                .build();
                         emp.setId(id);
 
                         empList.add(emp);

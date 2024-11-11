@@ -1,8 +1,9 @@
 package controller;
 
+import command.ICommand;
+import command.ListEmployeesAction;
 import dao.EmployeeDAO;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.List;
 import javax.servlet.ServletException;
@@ -12,9 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 import model.Employee;
 
 public class ListEmployeesServlet extends HttpServlet {
-    
-    final EmployeeDAO empDAO = new EmployeeDAO();
-    Employee emp = new Employee();
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -34,17 +32,12 @@ public class ListEmployeesServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            String order = request.getParameter("sort");
-            if (order == null || order.trim().equals("")){
-                order = "id";
-            }
-            request.setAttribute("order", order);
-            List<Employee> empList = empDAO.findAllEmployees(order);
-
-            request.setAttribute("empList", empList);
-            request.getRequestDispatcher("allemployees.jsp").forward(request, response);
-        } catch(SQLException e){
-            System.out.println("Erro ao buscar funcionários.");
+            ICommand command = new ListEmployeesAction();
+            String pageAction = command.execute(request, response);
+            request.getRequestDispatcher(pageAction).forward(request, response);
+        } catch(Exception e){
+            request.setAttribute("error", e.getMessage());
+            // TODO change back to Dispatcher
             response.sendRedirect("index.jsp");
         }
     }
